@@ -63,20 +63,6 @@ class audit:
                 "javav" : mjavav.group()
             }
         return json.dumps(java)
-    
-    def getTime(self): # 2-3 network_time status ( On / Off )
-        output = subprocess.check_output(['sudo', 'systemsetup', '-getusingnetworktime'], stderr=subprocess.STDOUT)
-        pTime = re.compile("On")
-        mTime = pTime.search(output)
-        if mTime == None:
-            time = {
-                "time" : "Off"
-            }
-        else:
-            time = {
-                "time" : mTime.group()
-            }
-        return json.dumps(time)
     def getAutoUpdate(self): # 1-2 AutomaticUpdate
         output = subprocess.check_output('defaults read /library/preferences/com.apple.commerce', shell=True)
         pAutoUpdate = re.compile(r'(?<=AutoUpdate\s=\s)\d')
@@ -174,6 +160,53 @@ class audit:
                     return 1
             else:
                     return 0
+    def getjava(self): # 1-3 
+        output = subprocess.check_output(['java', '-version'],stderr=subprocess.STDOUT)
+        pjava = re.compile(r"java version \"(\d+\.\d+\.\d+)\"")
+        mjava = pjava.search(output)
+        if mjava != None:
+            return mjava.group(1)
+        else:
+            return 'None'
+    def getTime(self): # 2-3
+        output = str(subprocess.check_output('systemsetup -getusingnetworktime',shell=True))
+        if output.find("On") != -1:
+            return 1
+        else:
+            return 0
+        
+    def askForPW(self): # 2-10
+        output = str(subprocess.check_output('defaults read com.apple.screensaver askForPassword',shell=True))
+        if output.find('0') != -1:
+            return 0
+        else:
+            return 1
+    
+    def isBluetoothShare(self): # 3-0-3
+        output = str(subprocess.check_output('/usr/sbin/system_profiler SPBluetoothDataType | grep State',shell=True))
+        pShare = re.compile(r"^.+(?<=State:\s)(.+?)$", re.MULTILINE)
+        mShare = pShare.search(output)
+        if mShare.group(1) == "Enabled":
+            return 1
+        else: 
+            return 0
+
+    def isInternettShare(self): # 3-1
+        output = str(subprocess.check_output('defaults read /Library/preferences/SystemConfiguration/com.apple.nat | grep -i Enabled',shell=True))
+        if output.find('1') != -1:
+            return 1
+        else:
+            return 0
+        
+    def AutoLogin(self): # 4-6
+        output=str(subprocess.check_output('defaults read /library/preferences/com.apple.loginwindow',shell=True))
+        pUser = re.compile(r"autoLoginUser\s\=\s(\w+?)\;")
+        mUser = pUser.search(output)
+        if mUser != None:
+            return mUser.group(1)
+        else:
+            return 'None'
+
 
 #test  = audit()
 #print(test.getIP())
