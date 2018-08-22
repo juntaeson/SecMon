@@ -96,65 +96,92 @@ class audit:
             return 0      
     
     def askForPW(self): # 2-10 taylor
-        output = str(subprocess.check_output('defaults read com.apple.screensaver askForPassword',shell=True))
-        if output.find('0') != -1:
-            return 0
-        else:
+        try:
+            output = str(subprocess.check_output('defaults read com.apple.screensaver askForPassword',shell=True))
+        except subprocess.CalledProcessError:
             return 1
+        else:
+            if output.find('0') != -1:
+                return 0
+            else:
+                return 1
         
     def getWebSandbox(self): #2-11 kyumm
-        output = subprocess.check_output('defaults read com.apple.Safari AutoOpenSafeDownloads', shell=True)
-        #output = subprocess.check_output(['defaults','read','com.apple.Safari','AutoOpenSafeDownloads'], stderr=subprocess.STDOUT)
-        pWebsandbox = re.compile("\d")
-        Websandbox = pWebsandbox.search(output)
-        #if Websandbox == "1":
-        #   return 1
-        #else:
-        #   return 0
-        return Websandbox.group()
+        try:
+            output = subprocess.check_output('defaults read com.apple.Safari AutoOpenSafeDownloads', shell=True)
+        except subprocess.CalledProcessError:
+            return 0
+        else:
+            pWebsandbox = re.compile("\d")
+            Websandbox = pWebsandbox.search(output)
+            #if Websandbox == "1":
+            #   return 1
+            #else:
+            #   return 0
+            return Websandbox.group()
 
     def isBluetoothOn(self): # 3.0 Bluetooth
-            output = str(subprocess.check_output('Defaults read /library/preferences/com.apple.bluetooth ControllerPowerState', shell=True))
-            if output.find('1') != -1:
-                    return 1
-            else:
-                    return 0
-                
-    def isBluetoothMode(self): #3-0-1
-            output = str(subprocess.check_output('/usr/sbin/system_profiler SPBluetoothDataType | grep -i discoverable',shell=True))
-            if output.find("off") == -1:
-                    return 0
-            else:
-                    return 1
-                
-    def isBluetoothHotspot(self): #3-0-2
-            output = str(subprocess.check_output('defaults read /Library/Preferences/SystemConfiguration/com.apple.nat | grep -i enable', shell=True))
-            hotspot = re.compile('(.+?(\d)){,2}')
-            return hotspot.search(output).group(2)
-            
-    def isBluetoothShare(self): # 3-0-3 taylor
-        output = str(subprocess.check_output('/usr/sbin/system_profiler SPBluetoothDataType | grep State',shell=True))
-        pShare = re.compile(r"^.+(?<=State:\s)(.+?)$", re.MULTILINE)
-        mShare = pShare.search(output)
-        if mShare.group(1) == "Enabled":
-            return 1
-        else: 
-            return 0
-
-    def isInternettShare(self): # 3-1 taylor
-        output = str(subprocess.check_output('defaults read /Library/preferences/SystemConfiguration/com.apple.nat | grep -i Enabled',shell=True))
+        output = str(subprocess.check_output('Defaults read /library/preferences/com.apple.bluetooth ControllerPowerState', shell=True))
         if output.find('1') != -1:
             return 1
         else:
             return 0
+                
+    def isBluetoothMode(self): #3-0-1
+        try:
+            output = str(subprocess.check_output('/usr/sbin/system_profiler SPBluetoothDataType | grep -i discoverable',shell=True))
+        except subprocess.CalledProcessError:
+            return 0
+        else:
+            if output.find("off") == -1:
+                return 0
+            else:
+                return 1
+                
+    def isBluetoothHotspot(self): #3-0-2
+        try:
+            output = str(subprocess.check_output('defaults read /Library/Preferences/SystemConfiguration/com.apple.nat | grep -i enable', shell=True))
+        except subprocess.CalledProcessError:
+            return 'None'
+        else:
+            hotspot = re.compile('(.+?(\d)){,2}')
+            return hotspot.search(output).group(2)
+            
+    def isBluetoothShare(self): # 3-0-3 taylor
+        try:
+            output = str(subprocess.check_output('/usr/sbin/system_profiler SPBluetoothDataType | grep State',shell=True))
+        except subprocess.CalledProcessError:
+            return 0
+        else:
+            pShare = re.compile(r"^.+(?<=State:\s)(.+?)$", re.MULTILINE)
+            mShare = pShare.search(output)
+            if mShare.group(1) == "Enabled":
+                return 1
+            else: 
+                return 0
+
+    def isInternettShare(self): # 3-1 taylor
+        try:
+            output = str(subprocess.check_output('defaults read /Library/preferences/SystemConfiguration/com.apple.nat | grep -i Enabled',shell=True))
+        except subprocess.CalledProcessError:
+            return 0
+        else:
+            if output.find('1') != -1:
+                return 1
+            else:
+                return 0
         
     def isOnAppFileServer(self): # 3-2
             #launchctl list | egrep AppleFileServer output = str(subprocess.check_output('',shell=True)
+        try:
             output = str(subprocess.check_output('launchctl list | grep AppleFileServer',shell=True))
+        except subprocess.CalledProcessError:
+            return 0
+        else:
             if output.find('0') != -1:
-                    return 1 # 0 if there is '0' in result, AppFileServer is On
+                return 1 # 0 if there is '0' in result, AppFileServer is On
             else:            # as we discussed, 1 dose mean turn on
-                    return 0
+                return 0
                 
     def isSmbOn(self): # 3-3
             output = str(subprocess.check_output('launchctl list | egrep smbd',shell=True))
