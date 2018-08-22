@@ -225,14 +225,18 @@ class audit:
             return 0
         
     def getAccountLockThreshold(self): #4-4  kyumm
-        output = subprocess.check_output('pwpolicy -getglobalpolicy', shell=True)
-        Ppwpolicy = re.compile(r"(.+?)$")
-        Mpwpolicy = Ppwpolicy.search(output)
-        return Mpwpolicy.group()
-        if Mpwpolicy != None:
-            return Mpwpolicy.group()
+        try:
+            output = subprocess.check_output('pwpolicy -getglobalpolicy', shell=True)
+            Ppwpolicy = re.compile(r"(.+?)$")
+            Mpwpolicy = Ppwpolicy.search(output)
+            Mpwpolicy.group()
+        except AttributeError:
+            return 'None'
         else:
-            return 0
+            if Mpwpolicy != None:
+                return Mpwpolicy.group()
+            else:
+                return 'None'
 
     def AutoLogin(self): # 4-6 taylor
         output=str(subprocess.check_output('defaults read /library/preferences/com.apple.loginwindow',shell=True))
