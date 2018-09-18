@@ -35,7 +35,7 @@ class myElastic:
              "A-4-JavaVersion" : self.auditor.isScreenShareOn(),
              
              "B-1-Gatekeeper" : self.auditor.getGatekeeper(),
-             "B-2-PWPolicy" : "aaaa", #######
+             "B-2-PWPolicy" : self.auditor.getAccountLockThreshold(),
              "B-3-Time" : self.auditor.getTime(), 
              "B-4-ScreenSleep" : "", #########
              "B-5-ScreenShare" : self.auditor.isScreenShareOn(),
@@ -49,27 +49,28 @@ class myElastic:
              "C-1-Bluetooth-share" : self.auditor.isBluetoothShare(),
              "C-2-InternetSharing" : self.auditor.isInternettShare(),
              "C-3-FileSharing" : self.auditor.isOnAppFileServer(),
-             "C-4-Firewall" : "a", #########
+             "C-4-Firewall" : self.auditor.isFWOn(),
              "C-5-DropICMP" : self.auditor.isFWOn(),
              
              "D-1-HomeDirPermission" : self.auditor.getHomeDirPermission(currUserAcc),
              "D-2-AppDirPermission" : self.auditor.AppDirPermission(),
              "D-3-SystemDirPermission" : self.auditor.SystemDirPermission(),
              "D-4-AccountLockThreshold" : self.auditor.getAccountLockThreshold(),
-             "D-5-UseRootAccount" : self.auditor.isUseRootAcc(),
+             "D-5-UseRootAccount" : self.auditor.useRootLogin(),
              "D-6-UseAutoLogin" : self.auditor.AutoLogin(),
              "D-7-RequirePasswordForSystem" : self.auditor.RequirePasswordForSystem(),
              "D-8-UseGuestAccount" : self.auditor.getUseGuestAccount()
              
             }
         }
+        
         print(result)
         #res = self.es.index(index="test-index", doc_type='self.esit-result1',id=1,body=result)
         #print(res['result'])
         
     def test(self):
         currUserAcc = self.auditor.getUserAcc()
-        print(self.auditor.isUseRootAcc())
+        print(self.auditor.SystemDirPermission())
 class audit:
     ################## GET BASIC INFO ######################
     def getHostName(self):
@@ -272,20 +273,21 @@ class audit:
             return 0
         
     def AppDirPermission(self): # 4-2 taylor
-        output=str(subprocess.check_output('sudo find /applications -iname "*\.app" -type d -perm -2 -ls',shell=True))
+        output=str(subprocess.check_output('find /applications -iname "*\.app" -type d -perm -2 -ls',shell=True))
         if output == ' ':
             return 1
         else:
             return 0
         
     def SystemDirPermission(self): # 4-3 taylor
-        output=str(subprocess.check_output('sudo find /System -type d -perm -2 -ls | grep -v "Public/Drop Box"',shell=True))
+        try:
+            output=str(subprocess.check_output('find /System -type d -perm -2 -ls | grep -v "Public/Drop Box"',stderr=subprocess.STDOUT,shell=True))
+            return 0
+        except:
+            return 1
         #output=str(subprocess.check_output('sudo find /System -type d -perm -2 -ls | grep -v "p'))
         
-        if output == ' ':
-            return 1
-        else:
-            return 0
+        
             
     def getAccountLockThreshold(self): #4-4  kyumm
         output = subprocess.check_output('pwpolicy -getaccountpolicies', shell=True)
@@ -297,7 +299,7 @@ class audit:
         else:
             return "0"
             
-    def useRootLogin(self): # 4-6 taylor
+    def useRootLogin(self): # 4-5 taylor
         output=str(subprocess.check_output('defaults read /Library/Preferences/com.apple.alf globalstate',shell=True))
         return output
     
@@ -337,6 +339,6 @@ class audit:
 
 if __name__ == '__main__':
     test = myElastic(bTest=True)
-    test.test()
-    #test.te()
+    #test.test()
+    test.doAuditNReport()
 
