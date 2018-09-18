@@ -291,7 +291,7 @@ class audit:
         if Mpwpolicy != None:
             return Mpwpolicy.group()
         else:
-            return 0
+            return "0"
             
     def useRootLogin(self): # 4-6 taylor
         output=str(subprocess.check_output('defaults read /Library/Preferences/com.apple.alf globalstate',shell=True))
