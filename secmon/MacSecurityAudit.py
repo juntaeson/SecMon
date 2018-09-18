@@ -2,77 +2,81 @@ import re
 import subprocess
 import json
 from datetime import datetime
-from elasticsearch import Elasticsearch
+#from elasticsearch import Elasticsearch
 
 #es = Elasticsearch(['http://192.168.0.13:9200'])
 
 class myElastic:
-    def __init__(self, host=None, port=None):
-        
-        try:
-            if host == None and port==None:
-                self.es = Elasticsearch()
-            elif host == None and port != None:
-                self.es = Elasticsearch(['localhost:%d'%(port)])
-            else:
-                self.es = Elasticsearch(['%s:%d'%(host,port)])
-        except:
-            print("cannot connect to elasticsearch server, please report to administrator\n")
-            exit(-1)
-            
-        self.es = audit()
+    def __init__(self, host=None, port=None, bTest=False):
+
+        if bTest == False:
+            try:
+                if host == None and port==None:
+                    self.es = Elasticsearch()
+                elif host == None and port != None:
+                    self.es = Elasticsearch(['localhost:%d'%(port)])
+                else:
+                    self.es = Elasticsearch(['%s:%d'%(host,port)])
+            except:
+                print("cannot connect to elasticsearch server, please report to administrator\n")
+                exit(-1)
+        self.auditor = audit()
     def doAuditNReport(self):
-        self.es = self.esit()
-        IP, MAC = self.es.getIPnMAC()
+        currUserAcc = self.auditor.getUserAcc()
+        IP, MAC = self.auditor.getIPnMAC()
         result = {
         'ip': IP,
         'mac':MAC,
         'time': datetime.now(),
         'self.esidtResult' :     {
-            # "A-1-CurrentOSVersion" : self.es.getVers(),
-             "A-2-LastOSUpdate" : self.es.getUpdateHistory(),
-             "A-3-AutomaticUpdate" : self.es.getAutoUpdate(),
-             "A-4-JavaVersion" : self.es.isScreenShareOn(),
+             "A-1-CurrentOSVersion" : self.auditor.getVers(),
+             "A-2-LastOSUpdate" : self.auditor.getUpdateHistory(),
+             "A-3-AutomaticUpdate" : self.auditor.getAutoUpdate(),
+             "A-4-JavaVersion" : self.auditor.isScreenShareOn(),
              
-             "B-1-Gatekeeper" : self.es.getGatekeeper(),
+             "B-1-Gatekeeper" : self.auditor.getGatekeeper(),
              "B-2-PWPolicy" : "aaaa", #######
-             "B-3-Time" : self.es.getTime(), 
+             "B-3-Time" : self.auditor.getTime(), 
              "B-4-ScreenSleep" : "", #########
-             "B-5-ScreenShare" : self.es.isScreenShareOn(),
-             "B-6-RemoteLogin" : self.es.getRemoteLogin(),
-             "B-7-ScreenAuth" : self.es.askForPW(),
-             "B-8-WebSandbox" : self.es.getWebSandbox(),
+             "B-5-ScreenShare" : self.auditor.isScreenShareOn(),
+             "B-6-RemoteLogin" : self.auditor.getRemoteLogin(),
+             "B-7-ScreenAuth" : self.auditor.askForPW(),
+             "B-8-WebSandbox" : self.auditor.getWebSandbox(),
              
-             "C-1-Bluetooth" : self.es.isBluetoothOn(),
-             "C-1-Bluetooth-Mode" : self.es.isBluetoothMode(),
-             "C-1-Bluetooth-Hotspot" : self.es.isBluetoothHotspot(),
-             "C-1-Bluetooth-share" : self.es.isBluetoothShare(),
-             "C-2-InternetSharing" : self.es.isInternettShare(),
-             #"C-3-FileSharing" : self.es.isOnAppFileServer(),
+             "C-1-Bluetooth" : self.auditor.isBluetoothOn(),
+             "C-1-Bluetooth-Mode" : self.auditor.isBluetoothMode(),
+             "C-1-Bluetooth-Hotspot" : self.auditor.isBluetoothHotspot(),
+             "C-1-Bluetooth-share" : self.auditor.isBluetoothShare(),
+             "C-2-InternetSharing" : self.auditor.isInternettShare(),
+             "C-3-FileSharing" : self.auditor.isOnAppFileServer(),
              "C-4-Firewall" : "a", #########
-             "C-5-DropICMP" : self.es.isFWOn(),
+             "C-5-DropICMP" : self.auditor.isFWOn(),
              
-             "D-1-HomeDirPermission" : self.es.getHomeDirPermission(),
-             "D-2-AppDirPermission" : self.es.AppDirPermission(),
-             "D-3-SystemDirPermission" : self.es.SystemDirPermission(),
-             "D-4-AccountLockThreshold" : self.es.getAccountLockThreshold(),
-             "D-5-UseRootAccount" : "aa",   #########
-             "D-6-UseAutoLogin" : self.es.AutoLogin(),
-             "D-7-RequirePasswordForSystem" : self.es.RequirePasswordForSystem(),
-             "D-8-UseGuestAccount" : self.es.getUseGuestAccount()
+             "D-1-HomeDirPermission" : self.auditor.getHomeDirPermission(currUserAcc),
+             "D-2-AppDirPermission" : self.auditor.AppDirPermission(),
+             "D-3-SystemDirPermission" : self.auditor.SystemDirPermission(),
+             "D-4-AccountLockThreshold" : self.auditor.getAccountLockThreshold(),
+             "D-5-UseRootAccount" : self.auditor.isUseRootAcc(),
+             "D-6-UseAutoLogin" : self.auditor.AutoLogin(),
+             "D-7-RequirePasswordForSystem" : self.auditor.RequirePasswordForSystem(),
+             "D-8-UseGuestAccount" : self.auditor.getUseGuestAccount()
              
             }
         }
-
-        res = self.es.index(index="test-index", doc_type='self.esit-result1',id=1,body=result)
-        print(res['result'])
+        print(result)
+        #res = self.es.index(index="test-index", doc_type='self.esit-result1',id=1,body=result)
+        #print(res['result'])
+        
+    def test(self):
+        currUserAcc = self.auditor.getUserAcc()
+        print(self.auditor.isUseRootAcc())
 class audit:
     ################## GET BASIC INFO ######################
     def getHostName(self):
         return str(subprocess.check_output('hostname', shell=True))
     
     def getUserAcc(self):
-        return str(subprocess.check_output('whoami', shell=True))
+        return str(subprocess.check_output('stat -f "%Su" /dev/console', shell=True)).strip()
     
     def getIPnMAC(self):
         ret = str(subprocess.check_output("ifconfig en0", shell=True))
@@ -86,7 +90,7 @@ class audit:
     def getVers(self): #1.0
         ret = str(subprocess.check_output("sw_vers", shell=True))
         rProductName = re.compile(r"ProductName:(.+?)$")
-        rProductVersion = re.compile(r"ProductVersion:(.+?)$")
+        rProductVersion = re.compile(r"ProductVersion:(.+?)$", re.MULTILINE)
         rBuildVersion = re.compile(r"BuildVersion:(.+?)$")
         return rProductVersion.search(ret).group(1)
      
@@ -146,7 +150,7 @@ class audit:
                     return 1
                 
     def getRemoteLogin(self): #2-7 kyumm
-        output = str(subprocess.check_output('sudo systemsetup -getremotelogin', shell=True))
+        output = str(subprocess.check_output('systemsetup -getremotelogin', shell=True))
         pRlogin = re.compile(r'(?<=Remote\sLogin:\s)\w*')
         Rlogin = pRlogin.search(output)
         if Rlogin.group() == "Off":
@@ -256,14 +260,14 @@ class audit:
             else:
                     return 0
                 
-    def getHomeDirPermission(self): #4-1  kyumm
-        output = subprocess.check_output('ls -l /Users/ | egrep -iE -v "root|administrator|total"', shell=True)
+    def getHomeDirPermission(self, user): #4-1  kyumm
+        output = subprocess.check_output('ls -l /Users/ | grep %s | egrep -iE -v "root|administrator|total"' % user , shell=True)
         pUsers = re.compile(r'(\D{12})(\d+)(\D+\d+)', re.MULTILINE)
         #output = output.split()
         #pUsers = re.compile('^.+', re.MULTILINE)
         mUsers = pUsers.search(output)
         if mUsers != None:
-            return mUsers.group(1), mUsers.group(3)
+            return mUsers.group(1)#, mUsers.group(3)
         else:
             return 0
         
@@ -322,9 +326,17 @@ class audit:
         else:
             return 0
         
+    def isUseRootAcc(self):
+        cmd = 'dscl . -read /Users/root AuthenticationAuthority'
+        output = str(subprocess.check_output(cmd,stderr=subprocess.STDOUT, shell=True))
+        if output.find('No such key: AuthenticationAuthority') != -1:
+            return 1
+        else:
+            return 0
     ######################### END ######################
 
 if __name__ == '__main__':
-   auditor = myElastic()
-   auditor.doAuditNReport()
+    test = myElastic(bTest=True)
+    test.test()
+    #test.te()
 
