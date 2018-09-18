@@ -286,21 +286,21 @@ class audit:
             return 1
         else:
             return 0
-        
+            
     def getAccountLockThreshold(self): #4-4  kyumm
-        try:
-            output = subprocess.check_output('pwpolicy -getglobalpolicy', shell=True)
-            Ppwpolicy = re.compile(r"(.+?)$")
-            Mpwpolicy = Ppwpolicy.search(output)
-            Mpwpolicy.group()
-        except AttributeError:
-            return 'None'
+        output = subprocess.check_output('pwpolicy -getaccountpolicies', shell=True)
+        Ppwpolicy = re.compile(r"(.+?)$")
+        Mpwpolicy = Ppwpolicy.search(output)
+        #return Mpwpolicy.group()
+        if Mpwpolicy != None:
+            return Mpwpolicy.group()
         else:
-            if Mpwpolicy != None:
-                return Mpwpolicy.group()
-            else:
-                return 'None'
-
+            return "0"
+            
+    def useRootLogin(self): # 4-6 taylor
+        output=str(subprocess.check_output('defaults read /Library/Preferences/com.apple.alf globalstate',shell=True))
+        return output
+    
     def AutoLogin(self): # 4-6 taylor
         output=str(subprocess.check_output('defaults read /library/preferences/com.apple.loginwindow',shell=True))
         pUser = re.compile(r"autoLoginUser\s\=\s(\w+?)\;")
