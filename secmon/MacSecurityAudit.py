@@ -296,7 +296,10 @@ class audit:
                 return Mpwpolicy.group()
             else:
                 return 'None'
-
+    def useRootLogin(self): # 4-6 taylor
+        output=str(subprocess.check_output('defaults read /Library/Preferences/com.apple.alf globalstate',shell=True))
+        return output
+    
     def AutoLogin(self): # 4-6 taylor
         output=str(subprocess.check_output('defaults read /library/preferences/com.apple.loginwindow',shell=True))
         pUser = re.compile(r"autoLoginUser\s\=\s(\w+?)\;")
