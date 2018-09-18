@@ -2,11 +2,70 @@ import re
 import subprocess
 import json
 from datetime import datetime
-#from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch
 
 #es = Elasticsearch(['http://192.168.0.13:9200'])
 
+class myElastic:
+    def __init__(self, host=None, port=None):
+        
+        try:
+            if host == None and port==None:
+                self.es = Elasticsearch()
+            elif host == None and port != None:
+                self.es = Elasticsearch(['localhost:%d'%(port)])
+            else:
+                self.es = Elasticsearch(['%s:%d'%(host,port)])
+        except:
+            print("cannot connect to elasticsearch server, please report to administrator\n")
+            exit(-1)
+            
+        self.es = audit()
+    def doAuditNReport(self):
+        self.es = self.esit()
+        IP, MAC = self.es.getIPnMAC()
+        result = {
+        'ip': IP,
+        'mac':MAC,
+        'time': datetime.now(),
+        'self.esidtResult' :     {
+            # "A-1-CurrentOSVersion" : self.es.getVers(),
+             "A-2-LastOSUpdate" : self.es.getUpdateHistory(),
+             "A-3-AutomaticUpdate" : self.es.getAutoUpdate(),
+             "A-4-JavaVersion" : self.es.isScreenShareOn(),
+             
+             "B-1-Gatekeeper" : self.es.getGatekeeper(),
+             "B-2-PWPolicy" : "aaaa", #######
+             "B-3-Time" : self.es.getTime(), 
+             "B-4-ScreenSleep" : "", #########
+             "B-5-ScreenShare" : self.es.isScreenShareOn(),
+             "B-6-RemoteLogin" : self.es.getRemoteLogin(),
+             "B-7-ScreenAuth" : self.es.askForPW(),
+             "B-8-WebSandbox" : self.es.getWebSandbox(),
+             
+             "C-1-Bluetooth" : self.es.isBluetoothOn(),
+             "C-1-Bluetooth-Mode" : self.es.isBluetoothMode(),
+             "C-1-Bluetooth-Hotspot" : self.es.isBluetoothHotspot(),
+             "C-1-Bluetooth-share" : self.es.isBluetoothShare(),
+             "C-2-InternetSharing" : self.es.isInternettShare(),
+             #"C-3-FileSharing" : self.es.isOnAppFileServer(),
+             "C-4-Firewall" : "a", #########
+             "C-5-DropICMP" : self.es.isFWOn(),
+             
+             "D-1-HomeDirPermission" : self.es.getHomeDirPermission(),
+             "D-2-AppDirPermission" : self.es.AppDirPermission(),
+             "D-3-SystemDirPermission" : self.es.SystemDirPermission(),
+             "D-4-AccountLockThreshold" : self.es.getAccountLockThreshold(),
+             "D-5-UseRootAccount" : "aa",   #########
+             "D-6-UseAutoLogin" : self.es.AutoLogin(),
+             "D-7-RequirePasswordForSystem" : self.es.RequirePasswordForSystem(),
+             "D-8-UseGuestAccount" : self.es.getUseGuestAccount()
+             
+            }
+        }
 
+        res = self.es.index(index="test-index", doc_type='self.esit-result1',id=1,body=result)
+        print(res['result'])
 class audit:
     ################## GET BASIC INFO ######################
     def getHostName(self):
@@ -23,7 +82,7 @@ class audit:
     
     ####################### END #############################
     
-    ############### AUDIT START ##############################
+    ############### self.esIT START ##############################
     def getVers(self): #1.0
         ret = str(subprocess.check_output("sw_vers", shell=True))
         rProductName = re.compile(r"ProductName:(.+?)$")
@@ -234,60 +293,7 @@ class audit:
         
     ######################### END ######################
 
+if __name__ == '__main__':
+   auditor = myElastic()
+   auditor.doAuditNReport()
 
-
-
-#test  = audit()
-#print(test.getIP())
-
-aud = audit()
-IP, MAC = aud.getIPnMAC()
-result = {
-        'ip': IP,
-        'mac':MAC,
-        'time': datetime.now(),
-        'AudidtResult' :     {
-            # "A-1-CurrentOSVersion" : aud.getVers(),
-             "A-2-LastOSUpdate" : aud.getUpdateHistory(),
-             "A-3-AutomaticUpdate" : aud.getAutoUpdate(),
-             "A-4-JavaVersion" : aud.isScreenShareOn(),
-             
-             "B-1-Gatekeeper" : aud.getGatekeeper(),
-             "B-2-PWPolicy" : "aaaa", #######
-             "B-3-Time" : aud.getTime(), 
-             "B-4-ScreenSleep" : "", #########
-             "B-5-ScreenShare" : aud.isScreenShareOn(),
-             "B-6-RemoteLogin" : aud.getRemoteLogin(),
-             "B-7-ScreenAuth" : aud.askForPW(),
-             "B-8-WebSandbox" : aud.getWebSandbox(),
-             
-             "C-1-Bluetooth" : aud.isBluetoothOn(),
-             "C-1-Bluetooth-Mode" : aud.isBluetoothMode(),
-             "C-1-Bluetooth-Hotspot" : aud.isBluetoothHotspot(),
-             "C-1-Bluetooth-share" : aud.isBluetoothShare(),
-             "C-2-InternetSharing" : aud.isInternettShare(),
-             #"C-3-FileSharing" : aud.isOnAppFileServer(),
-             "C-4-Firewall" : "a", #########
-             "C-5-DropICMP" : aud.isFWOn(),
-             
-             "D-1-HomeDirPermission" : aud.getHomeDirPermission(),
-             "D-2-AppDirPermission" : aud.AppDirPermission(),
-             "D-3-SystemDirPermission" : aud.SystemDirPermission(),
-             "D-4-AccountLockThreshold" : aud.getAccountLockThreshold(),
-             "D-5-UseRootAccount" : "aa",   #########
-             "D-6-UseAutoLogin" : aud.AutoLogin(),
-             "D-7-RequirePasswordForSystem" : aud.RequirePasswordForSystem(),
-             "D-8-UseGuestAccount" : aud.getUseGuestAccount()
-             
-            }
-    }
-
-print(result)
-#es = es.delete(index="test-index", doc_type='audit-result',id=1)
-#es.reindex(body=result)
-#res = es.index(index="test-index", doc_type='audit-result1',id=1,body=result)
-#print(res['result'])
-
-#res = es.get(index="test-index", doc_type='_all',id=1)
-#res = es.mget(index="test-index",body=1)
-#print(res['_source']) 
