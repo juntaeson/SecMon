@@ -238,7 +238,7 @@ class audit:
     def isOnAppFileServer(self): # 3-2
             #launchctl list | egrep AppleFileServer output = str(subprocess.check_output('',shell=True)
         try:
-            output = str(subprocess.check_output('sudo launchctl list | grep AppleFileServer',shell=True))
+            output = str(subprocess.check_output('launchctl list | grep AppleFileServer',shell=True))
         except subprocess.CalledProcessError:
             return 0
         else:
